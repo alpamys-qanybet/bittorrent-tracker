@@ -117,10 +117,10 @@ http.createServer(function(request, response) {
                 var server = config[i];
 
                 if (server.ip == data[0]  && server.port == data[1]) {
-                  server.ip = lVars.query.ip;
-                  server.port = lVars.query.port;
-                  server.type = lVars.query.type;
-                  break;
+                    server.ip = lVars.query.ip;
+                    server.port = lVars.query.port;
+                    server.type = lVars.query.type;
+                    break;
                 } 
             }
 
@@ -151,6 +151,71 @@ http.createServer(function(request, response) {
                 }
             });
         }
+
+        else if (lVars.query.action == 'delete') {
+            console.log('host ' + lVars.query.host);
+            
+            var ans = {};
+
+            var file = fs.readFileSync(__dirname + '/lib/tracker/settings.json', "utf8");
+            var config = JSON.parse(file);
+
+            console.log('before');
+            console.log( JSON.stringify(config) );
+
+            var data = lVars.query.host.split(':');
+
+            var isFound = false;
+            for (var i in config) {
+                var server = config[i];
+
+                if (server.ip == data[0]  && server.port == data[1]) {
+                    config.splice(i, 1);
+                    isFound = true;
+                    break;
+                }
+            }
+
+            console.log('after');
+            console.log( JSON.stringify(config) );
+
+            if (isFound)
+              fs.writeFile(__dirname + '/lib/tracker/settings.json', JSON.stringify(config) , function(err) {
+                  if(err) {
+                      console.log(err);
+                      ans['status'] = 'err';
+
+                      response.writeHead(200,{
+                                  'Content-Type': 'application/json',
+                                  'Access-Control-Allow-Origin': '*'
+                              });
+                      response.write(JSON.stringify(ans));
+                      response.end();
+                  } else {
+                      console.log("The file was saved!");
+                      ans['status'] = 'success';
+                      ans['servers'] = config;
+
+                      response.writeHead(200,{
+                                  'Content-Type': 'application/json',
+                                  'Access-Control-Allow-Origin': '*'
+                              });
+                      response.write(JSON.stringify(ans));
+                      response.end();
+                  }
+              });
+            else {
+                ans['status'] = 'notfound';
+                ans['servers'] = config;
+
+                response.writeHead(200,{
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        });
+                response.write(JSON.stringify(ans));
+                response.end();
+            }
+        }        
     }
 
     else {

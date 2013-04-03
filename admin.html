@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta charset="utf-8">
 <link rel="stylesheet" type="text/css" href="http://localhost:9614/stylesheet/bootstrap/bootstrap.min.css"/>
 <style>
 label.error {
@@ -97,6 +98,21 @@ label.error {
 		<div class="modal-footer">
 			<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 			<button class="btn btn-primary" onclick="edit();">Save changes</a>
+		</div>
+	</div>
+
+	<div id="deleteModal" class="modal hide fade">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			<h3>Attention!</h3>
+		</div>
+		
+		<div class="modal-body">
+			<p class="message"></p>
+		</div>
+		<div class="modal-footer">
+			<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+			<button class="btn btn-danger" onclick="deleteServer();">Delete</a>
 		</div>
 	</div>
 
@@ -217,13 +233,84 @@ function edit() {
 	});
 }
 
+function edit() {
+	var ip = jQuery('#editIP').val();
+	var port = jQuery('#editPort').val();
+	var type = jQuery('#editType').val();
+
+	var dataString = 'action=save' +
+					 '&host=' + host + 
+					 '&ip=' + ip +
+					 '&port=' + port +
+					 '&type=' + type;
+
+    jQuery.ajax
+	({
+		type: 'GET',
+		url: 'http://localhost:9615/?'+dataString,
+		dataType: 'json',
+		success: function(data) {
+			console.log(data);
+			
+			if (data.status == 'success') {
+				jQuery('#editModal').modal('hide');
+				server_list = data.servers;
+				prepareContent();
+			}
+			else if (data.status == 'err')
+				jQuery('#editModal div.modal-body p.message').text('Error occured while writing!');
+			else if (data.status == 'exists')
+				jQuery('#editModal div.modal-body p.message').text('Already exists!');
+		}
+	});
+}
+
+function prepareDelete(server) {	
+	host = server.ip + ':' + server.port;
+
+	jQuery('#deleteModal div.modal-body p.message').text('Delete server '+host+' ?!');
+	
+	jQuery('#deleteModal').modal('show');
+}
+
+
+function deleteServer() {
+	var dataString = 'action=delete' +
+					 '&host=' + host;
+
+    jQuery.ajax
+	({
+		type: 'GET',
+		url: 'http://localhost:9615/?'+dataString,
+		dataType: 'json',
+		success: function(data) {
+			console.log(data);
+			
+			if (data.status == 'success') {
+				jQuery('#deleteModal').modal('hide');
+				server_list = data.servers;
+				prepareContent();
+			}
+			else if (data.status == 'err')
+				jQuery('#deleteModal div.modal-body p.message').text('Error occured!');
+			else if (data.status == 'notfound') {
+				jQuery('#deleteModal').modal('hide');
+				server_list = data.servers;
+				prepareContent();
+			}
+		}
+	});
+}
+
+
 function prepareContent(){
 	jQuery('#server_list').empty();
 
+	jQuery('#server_list').append('<th>№</th>');
 	jQuery('#server_list').append('<th>IP</th>');
 	jQuery('#server_list').append('<th>Port</th>');
 	jQuery('#server_list').append('<th>Type</th>');
-	jQuery('#server_list').append('<th>Edit</th>');
+	jQuery('#server_list').append('<th>Actions</th>');
 
 	for (var i in server_list) {
 		console.log(server_list[i]);
@@ -231,15 +318,21 @@ function prepareContent(){
 		var server = server_list[i];
 
 		jQuery('#server_list').append('<tr></tr>');
+		jQuery('#server_list tr:last').append('<td>' + (eval(i) + 1) + '</td>');
 		jQuery('#server_list tr:last').append('<td>' + server.ip + '</td>');
 		jQuery('#server_list tr:last').append('<td>' + server.port + '</td>');
 		jQuery('#server_list tr:last').append('<td>' + server.type + '</td>');
 		jQuery('#server_list tr:last').append('<td></td>');
 
-		var edit_btn = "<button class='btn' onclick='prepareEdit("+JSON.stringify(server)+")'>"+
+		var temp = "<button class='btn' onclick='prepareEdit("+JSON.stringify(server)+")'>"+
 							"<i class='icon-pencil'></i>"+
 				       "</button>";
-		jQuery('#server_list tr:last td:last').append(edit_btn);
+		jQuery('#server_list tr:last td:last').append(temp);
+
+		temp = "<button class='btn btn-danger' style='margin-left: 5px;' onclick='prepareDelete("+JSON.stringify(server)+")'>"+
+					"<i class='icon-trash icon-white'></i>"+
+				"</button>";
+		jQuery('#server_list tr:last td:last').append(temp);
 	}
 }
 </script>
