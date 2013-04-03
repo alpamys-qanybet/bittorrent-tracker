@@ -88,7 +88,8 @@ http.createServer(function(request, response) {
             console.log('ip ' + lVars.query.ip);
             console.log('port ' + lVars.query.port);
             console.log('type ' + lVars.query.type);
-            
+            console.log('enabled ' + lVars.query.enabled);
+
             var ans = {};
 
             var file = fs.readFileSync(__dirname + '/lib/tracker/settings.json', "utf8");
@@ -96,22 +97,23 @@ http.createServer(function(request, response) {
 
             var data = lVars.query.host.split(':');
 
-            for (var i in config) {
-                var server = config[i];
+            if (lVars.query.ip != data[0] && lVars.query.port != data[1])
+                for (var i in config) {
+                    var server = config[i];
 
-                if (server.ip == lVars.query.ip  && server.port == lVars.query.port) {
-                    ans['status'] = 'exists';
+                    if (server.ip == lVars.query.ip  && server.port == lVars.query.port) {
+                        ans['status'] = 'exists';
 
-                    response.writeHead(200,{
-                                'Content-Type': 'application/json',
-                                'Access-Control-Allow-Origin': '*'
-                            });
-                    response.write(JSON.stringify(ans));
-                    response.end();
-                  
-                    return;
-                } 
-            }
+                        response.writeHead(200,{
+                                    'Content-Type': 'application/json',
+                                    'Access-Control-Allow-Origin': '*'
+                                });
+                        response.write(JSON.stringify(ans));
+                        response.end();
+                      
+                        return;
+                    } 
+                }
 
             for (var i in config) {
                 var server = config[i];
@@ -120,6 +122,7 @@ http.createServer(function(request, response) {
                     server.ip = lVars.query.ip;
                     server.port = lVars.query.port;
                     server.type = lVars.query.type;
+                    server.enabled = lVars.query.enabled;
                     break;
                 } 
             }
@@ -180,30 +183,30 @@ http.createServer(function(request, response) {
             console.log( JSON.stringify(config) );
 
             if (isFound)
-              fs.writeFile(__dirname + '/lib/tracker/settings.json', JSON.stringify(config) , function(err) {
-                  if(err) {
-                      console.log(err);
-                      ans['status'] = 'err';
+                fs.writeFile(__dirname + '/lib/tracker/settings.json', JSON.stringify(config) , function(err) {
+                    if(err) {
+                        console.log(err);
+                        ans['status'] = 'err';
 
-                      response.writeHead(200,{
-                                  'Content-Type': 'application/json',
-                                  'Access-Control-Allow-Origin': '*'
-                              });
-                      response.write(JSON.stringify(ans));
-                      response.end();
-                  } else {
-                      console.log("The file was saved!");
-                      ans['status'] = 'success';
-                      ans['servers'] = config;
+                        response.writeHead(200,{
+                                    'Content-Type': 'application/json',
+                                    'Access-Control-Allow-Origin': '*'
+                                });
+                        response.write(JSON.stringify(ans));
+                        response.end();
+                    } else {
+                        console.log("The file was saved!");
+                        ans['status'] = 'success';
+                        ans['servers'] = config;
 
-                      response.writeHead(200,{
-                                  'Content-Type': 'application/json',
-                                  'Access-Control-Allow-Origin': '*'
-                              });
-                      response.write(JSON.stringify(ans));
-                      response.end();
-                  }
-              });
+                        response.writeHead(200,{
+                                    'Content-Type': 'application/json',
+                                    'Access-Control-Allow-Origin': '*'
+                                });
+                        response.write(JSON.stringify(ans));
+                        response.end();
+                    }
+                });
             else {
                 ans['status'] = 'notfound';
                 ans['servers'] = config;

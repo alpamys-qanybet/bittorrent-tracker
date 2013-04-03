@@ -88,6 +88,16 @@ label.error {
 			</div>
 
 			<div class="control-group">
+				<label class="control-label" for="status">Status:</label>
+				<div class="controls">
+					<div class="btn-group" id="status" data-toggle="buttons-radio">
+						<button type="button" id="enabled" class="btn">Enabled</button>
+						<button type="button" id="disabled" class="btn">Disabled</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="control-group">
 				<label class="control-label" for="editType">Type:</label>
 				<div class="controls">
 					  <select id="editType" class="input-large"><select>
@@ -198,6 +208,14 @@ function prepareEdit(server) {
 	jQuery('#editPort').val(server.port);
 	jQuery('#editType').val(server.type);
 
+	jQuery('#enabled').removeClass('active');
+	jQuery('#disabled').removeClass('active');
+
+	if ( eval(server.enabled) ) 
+		jQuery('#enabled').addClass('active');
+	else
+		jQuery('#disabled').addClass('active');
+
 	jQuery('#editModal').modal('show');
 }
 
@@ -238,11 +256,14 @@ function edit() {
 	var port = jQuery('#editPort').val();
 	var type = jQuery('#editType').val();
 
+	var enabled = jQuery('#enabled').hasClass('active');
+
 	var dataString = 'action=save' +
 					 '&host=' + host + 
 					 '&ip=' + ip +
 					 '&port=' + port +
-					 '&type=' + type;
+					 '&type=' + type +
+					 '&enabled=' + enabled;
 
     jQuery.ajax
 	({
@@ -310,6 +331,7 @@ function prepareContent(){
 	jQuery('#server_list').append('<th>IP</th>');
 	jQuery('#server_list').append('<th>Port</th>');
 	jQuery('#server_list').append('<th>Type</th>');
+	jQuery('#server_list').append('<th>Enabled</th>');
 	jQuery('#server_list').append('<th>Actions</th>');
 
 	for (var i in server_list) {
@@ -322,6 +344,7 @@ function prepareContent(){
 		jQuery('#server_list tr:last').append('<td>' + server.ip + '</td>');
 		jQuery('#server_list tr:last').append('<td>' + server.port + '</td>');
 		jQuery('#server_list tr:last').append('<td>' + server.type + '</td>');
+		jQuery('#server_list tr:last').append('<td>' + server.enabled + '</td>');
 		jQuery('#server_list tr:last').append('<td></td>');
 
 		var temp = "<button class='btn' onclick='prepareEdit("+JSON.stringify(server)+")'>"+
