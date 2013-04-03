@@ -14,47 +14,90 @@ label.error {
 </head>
 
 <body>
-	<div align='center'>
+	<div style="width:80%; position: relative; margin: auto;">
 		<h3>Servers' Administrator</h3>
 	
-		<table id='server_list' class="table table-striped table-bordered table-hover" style="width:80%;">
+		<table id='server_list' class="table table-striped table-bordered table-hover">
 		</table>
+
+		<button class='btn' onclick='prepareAdd()'>
+			<i class='icon-plus'></i>
+		</button>
 	</div>
 
-
-	<div id="editModal" class="modal hide fade">
-	  <div class="modal-header">
-	    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	    <h3>Modal header</h3>
-	  </div>
-	  	<div class="modal-body form-horizontal">
-	    
-		<div class="control-group">
-			<label class="control-label" for="editIP">IP:</label>
-			<div class="controls">
-				<input type="text" id="editIP" class="input-large">
-	    	</div>
+	<div id="addModal" class="modal hide fade">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			<h3></h3>
 		</div>
 		
-		<div class="control-group">
-			<label class="control-label" for="editPort">Port:</label>
-			<div class="controls">
-				  <input type="text" id="editPort" class="input-large">
-	    	</div>
-		</div>
+		<div class="modal-body form-horizontal">
+			<p class="message"></p>  
+			<div class="control-group">
+				<label class="control-label" for="addIP">IP:</label>
+				<div class="controls">
+					<input type="text" id="addIP" class="input-large" style="height: 30px;">
+				</div>
+				<label class="error" for="addIP" id="addIP_error"></label>
+			</div>
 
-		<div class="control-group">
-			<label class="control-label" for="editType">Type:</label>
-			<div class="controls">
-				  <select id="editType" class="input-large"><select>
-	    	</div>
-		</div>
+			<div class="control-group">
+				<label class="control-label" for="addPort">Port:</label>
+				<div class="controls">
+					  <input type="text" id="addPort" class="input-large" style="height: 30px;">
+				</div>
+				<label class="error" for="addPort" id="addPort_error"></label>
+			</div>
 
-	  </div>
-	  <div class="modal-footer">
-	    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-	    <button class="btn btn-primary" onclick="save();">Save changes</a>
-	  </div>
+			<div class="control-group">
+				<label class="control-label" for="addType">Type:</label>
+				<div class="controls">
+					  <select id="addType" class="input-large"><select>
+				</div>
+				<label class="error" for="addType" id="addType_error"></label>
+			</div>
+
+		</div>
+		<div class="modal-footer">
+			<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+			<button class="btn btn-primary" onclick="add();">Add</a>
+		</div>
+	</div>
+
+	<div id="editModal" class="modal hide fade">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			<h3></h3>
+		</div>
+			<div class="modal-body form-horizontal">
+			<p class="message"></p>  
+
+			<div class="control-group">
+				<label class="control-label" for="editIP">IP:</label>
+				<div class="controls">
+					<input type="text" id="editIP" class="input-large" style="height: 30px;">
+				</div>
+			</div>
+
+			<div class="control-group">
+				<label class="control-label" for="editPort">Port:</label>
+				<div class="controls">
+					  <input type="text" id="editPort" class="input-large" style="height: 30px;">
+				</div>
+			</div>
+
+			<div class="control-group">
+				<label class="control-label" for="editType">Type:</label>
+				<div class="controls">
+					  <select id="editType" class="input-large"><select>
+				</div>
+			</div>
+
+		</div>
+		<div class="modal-footer">
+			<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+			<button class="btn btn-primary" onclick="edit();">Save changes</a>
+		</div>
 	</div>
 
 <script src="http://localhost:9614/js/jquery.js"></script>
@@ -79,13 +122,61 @@ jQuery(document).ready(function(){
 		}
 	});
 
+	jQuery('#addType').empty();
 	jQuery('#editType').empty();
-	for (var i in type_list)
+	for (var i in type_list) {
+		jQuery('#addType').append('<option>' + type_list[i] + '</option>');
 		jQuery('#editType').append('<option>' + type_list[i] + '</option>');
+	}
 });
 
-function edit(server) {	
+function prepareAdd() {	
+	jQuery('#addModal div.modal-header h3').html('Add server');
+	jQuery('#addModal div.modal-body p.message').empty();
+
+	jQuery('#addIP').val('');
+	jQuery('#addPort').val('');
+	jQuery('#addType').val('school');
+
+	jQuery('#addModal').modal('show');
+}
+
+function add() {
+	var ip = jQuery('#addIP').val();
+	var port = jQuery('#addPort').val();
+	var type = jQuery('#addType').val();
+
+	var dataString = 'action=add' +
+					 '&ip=' + ip +
+					 '&port=' + port +
+					 '&type=' + type;
+
+    jQuery.ajax
+	({
+		type: 'GET',
+		url: 'http://localhost:9615/?'+dataString,
+		dataType: 'json',
+		success: function(data) {
+			console.log(data);
+			
+			if (data.status == 'success') {
+				jQuery('#addModal').modal('hide');
+				server_list = data.servers;
+				prepareContent();
+			}
+			else if (data.status == 'err')
+				jQuery('#addModal div.modal-body p.message').text('Error occured while writing!');
+			else if (data.status == 'exists')
+				jQuery('#addModal div.modal-body p.message').text('Already exists!');
+		}
+	});
+}
+
+function prepareEdit(server) {	
 	host = server.ip + ':' + server.port;
+
+	jQuery('#editModal div.modal-header h3').html('Edit server ' + host);
+	jQuery('#editModal div.modal-body p.message').empty();
 	
 	jQuery('#editIP').val(server.ip);
 	jQuery('#editPort').val(server.port);
@@ -94,7 +185,7 @@ function edit(server) {
 	jQuery('#editModal').modal('show');
 }
 
-function save() {
+function edit() {
 	var ip = jQuery('#editIP').val();
 	var port = jQuery('#editPort').val();
 	var type = jQuery('#editType').val();
@@ -111,11 +202,17 @@ function save() {
 		url: 'http://localhost:9615/?'+dataString,
 		dataType: 'json',
 		success: function(data) {
-			jQuery('#editModal').modal('hide');
-
-			console.log('success');
-			server_list = data;
-			prepareContent();
+			console.log(data);
+			
+			if (data.status == 'success') {
+				jQuery('#editModal').modal('hide');
+				server_list = data.servers;
+				prepareContent();
+			}
+			else if (data.status == 'err')
+				jQuery('#editModal div.modal-body p.message').text('Error occured while writing!');
+			else if (data.status == 'exists')
+				jQuery('#editModal div.modal-body p.message').text('Already exists!');
 		}
 	});
 }
@@ -139,7 +236,7 @@ function prepareContent(){
 		jQuery('#server_list tr:last').append('<td>' + server.type + '</td>');
 		jQuery('#server_list tr:last').append('<td></td>');
 
-		var edit_btn = "<button class='btn' onclick='edit("+JSON.stringify(server)+")'>"+
+		var edit_btn = "<button class='btn' onclick='prepareEdit("+JSON.stringify(server)+")'>"+
 							"<i class='icon-pencil'></i>"+
 				       "</button>";
 		jQuery('#server_list tr:last td:last').append(edit_btn);
