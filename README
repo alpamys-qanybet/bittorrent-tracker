@@ -1,5 +1,4 @@
-Run node example.js to start the tracker.
-
+Run node tracker_server.js to start the tracker. 
 Supports both UDP and HTTP requests.
 
-Tested with Node 0.4.4
+Run node admin.js to administrate the IP-Address list.
