@@ -24,6 +24,7 @@ http.createServer(function(request, response) {
             console.log('ip ' + lVars.query.ip);
             console.log('port ' + lVars.query.port);
             console.log('type ' + lVars.query.type);
+            console.log('enabled ' + lVars.query.enabled);
 
             var ans = {};
 
@@ -52,6 +53,7 @@ http.createServer(function(request, response) {
             newServer['ip'] = lVars.query.ip;
             newServer['port'] = lVars.query.port;
             newServer['type'] = lVars.query.type;
+            newServer['enabled'] = lVars.query.enabled;
 
             config.push(newServer);
 

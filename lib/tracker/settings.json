@@ -1,4 +1,1 @@
-[
-	{"ip":"10.0.1.160", "port": "51413", "type": "seed"},
-	{"ip":"127.0.0.1", "port": "51413", "type": "school"}
-]
+[{"ip":"10.0.1.160","port":"51413","type":"region","enabled":"true"},{"ip":"127.0.0.1","port":"51413","type":"school","enabled":"true"},{"ip":"192.168.0.2","port":"2020","type":"region","enabled":"false"}]

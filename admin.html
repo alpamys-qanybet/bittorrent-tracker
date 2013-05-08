@@ -55,7 +55,16 @@ label.error {
 				<div class="controls">
 					  <select id="addType" class="input-large"><select>
 				</div>
-				<label class="error" for="addType" id="addType_error"></label>
+			</div>
+
+			<div class="control-group">
+				<label class="control-label" for="addStatus">Status:</label>
+				<div class="controls">
+					<div class="btn-group" id="addStatus" data-toggle="buttons-radio">
+						<button type="button" id="addEnabled" class="btn active">Enabled</button>
+						<button type="button" id="addDisabled" class="btn">Disabled</button>
+					</div>
+				</div>
 			</div>
 
 		</div>
@@ -78,6 +87,7 @@ label.error {
 				<div class="controls">
 					<input type="text" id="editIP" class="input-large" style="height: 30px;">
 				</div>
+				<label class="error" for="editIP" id="editIP_error"></label>
 			</div>
 
 			<div class="control-group">
@@ -85,6 +95,7 @@ label.error {
 				<div class="controls">
 					  <input type="text" id="editPort" class="input-large" style="height: 30px;">
 				</div>
+				<label class="error" for="editPort" id="editPort_error"></label>
 			</div>
 
 			<div class="control-group">
@@ -154,6 +165,8 @@ jQuery(document).ready(function(){
 		jQuery('#addType').append('<option>' + type_list[i] + '</option>');
 		jQuery('#editType').append('<option>' + type_list[i] + '</option>');
 	}
+
+	jQuery('.error').hide();
 });
 
 function prepareAdd() {	
@@ -163,7 +176,8 @@ function prepareAdd() {
 	jQuery('#addIP').val('');
 	jQuery('#addPort').val('');
 	jQuery('#addType').val('school');
-
+	jQuery('.error').hide();
+	
 	jQuery('#addModal').modal('show');
 }
 
@@ -171,11 +185,16 @@ function add() {
 	var ip = jQuery('#addIP').val();
 	var port = jQuery('#addPort').val();
 	var type = jQuery('#addType').val();
+	var enabled = jQuery('#addEnabled').hasClass('active');
+
+	ip = validateIPAddress(ip, 'add');
+	if (!ip) return;
 
 	var dataString = 'action=add' +
 					 '&ip=' + ip +
 					 '&port=' + port +
-					 '&type=' + type;
+					 '&type=' + type +
+					 '&enabled=' + enabled;
 
     jQuery.ajax
 	({
@@ -216,6 +235,8 @@ function prepareEdit(server) {
 	else
 		jQuery('#disabled').addClass('active');
 
+	jQuery('.error').hide();
+
 	jQuery('#editModal').modal('show');
 }
 
@@ -224,39 +245,10 @@ function edit() {
 	var port = jQuery('#editPort').val();
 	var type = jQuery('#editType').val();
 
-	var dataString = 'action=save' +
-					 '&host=' + host + 
-					 '&ip=' + ip +
-					 '&port=' + port +
-					 '&type=' + type;
-
-    jQuery.ajax
-	({
-		type: 'GET',
-		url: 'http://localhost:9615/?'+dataString,
-		dataType: 'json',
-		success: function(data) {
-			console.log(data);
-			
-			if (data.status == 'success') {
-				jQuery('#editModal').modal('hide');
-				server_list = data.servers;
-				prepareContent();
-			}
-			else if (data.status == 'err')
-				jQuery('#editModal div.modal-body p.message').text('Error occured while writing!');
-			else if (data.status == 'exists')
-				jQuery('#editModal div.modal-body p.message').text('Already exists!');
-		}
-	});
-}
-
-function edit() {
-	var ip = jQuery('#editIP').val();
-	var port = jQuery('#editPort').val();
-	var type = jQuery('#editType').val();
-
 	var enabled = jQuery('#enabled').hasClass('active');
+
+	ip = validateIPAddress(ip, 'edit');
+	if (!ip) return;
 
 	var dataString = 'action=save' +
 					 '&host=' + host + 
@@ -357,6 +349,96 @@ function prepareContent(){
 				"</button>";
 		jQuery('#server_list tr:last td:last').append(temp);
 	}
+}
+
+function validateIPAddress(ip,action) {
+	var labelIdentifier = "label#"+action+"IP_error";
+	var inputIdentifier = "input#"+action+"IP";
+
+	console.log('identifiers');
+	console.log(labelIdentifier);
+	console.log(inputIdentifier);
+
+	if (ip.length == 0) {
+		jQuery(labelIdentifier).html('Required field.');
+		jQuery(labelIdentifier).show();
+		jQuery(inputIdentifier).focus();
+		console.log('ip.length == 0');
+		return false;
+	}
+	else if (ip.length > 15) {
+		jQuery(labelIdentifier).html('Incorrect IP address.');
+		jQuery(labelIdentifier).show();
+		jQuery(inputIdentifier).focus();
+		console.log('ip.length > 15');
+		return false;
+	}
+	else {
+		var countPoint = 0;
+		for (var i in ip)
+			if (ip[i] == '.')
+				countPoint++;
+
+		if (countPoint > 3) {
+			jQuery(labelIdentifier).html('Incorrect IP address.');
+			jQuery(labelIdentifier).show();
+			jQuery(inputIdentifier).focus();
+			console.log('countPoint > 3');
+			return false;
+		}
+		else if (ip[0] == '.' || ip[ip.length-1] == '.') {
+			jQuery(labelIdentifier).html('Incorrect IP address.');
+			jQuery(labelIdentifier).show();
+			jQuery(inputIdentifier).focus();
+			console.log("ip[0] == '.' || ip[ip.length-1] == '.'");
+			return false;
+		}
+		else {
+			var ipChunks = ip.split('.');
+
+			var tempIp = '';
+			console.log('ipChunks');
+			for (var i in ipChunks) {
+				var ipChunk = ipChunks[i];
+				console.log(ipChunk);
+
+				if ( isNumber(ipChunk) ) {
+					var n = parseInt(ipChunk);
+
+					if (n >= 0 && n <=255) {
+						if (i == 0)
+							tempIp += n; //ipChunk.replace(/^0+(?!\.|$)/, '');
+						else
+							tempIp += '.' + n;//ipChunk.replace(/^0+(?!\.|$)/, '');
+					}
+					else {
+						jQuery(labelIdentifier).html('Incorrect IP address.');
+						jQuery(labelIdentifier).show();
+						jQuery(inputIdentifier).focus();
+						console.log('! n >= 0 && n <=255');
+						return false;
+					}
+
+				}
+				else {
+					jQuery(labelIdentifier).html('Incorrect IP address.');
+					jQuery(labelIdentifier).show();
+					jQuery(inputIdentifier).focus();
+					console.log('!isNumber(ipChunk)');
+					return false;
+				}
+			}
+
+			if (tempIp != '')
+				ip = tempIp;
+		}
+	}
+
+	return ip;
+}
+
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
 }
 </script>
 </body>
